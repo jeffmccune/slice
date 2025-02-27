@@ -3,72 +3,147 @@ package holos
 // Example to exercise and develop the slice transformer as a concrete use case
 // for a follow up arbitrary command transformer.
 
-// parameters injected from the platform spec.
-parameters: {
-	namespace:    string | *"httpbin-demo"                       @tag(namespace)
-	image:        string | *"quay.io/holos/mccutchen/go-httpbin" @tag(image)
-	version:      string | *"v2.14.1"                            @tag(version)
-	replicaCount: int | *1                                       @tag(replicaCount, type=int)
-}
-
-// Not used, but part of the project builder interface.
-parameters: {
-	project: string @tag(project)
-	stage:   string @tag(stage)
-}
-
-// BuildPlan for holos to execute.
-holos: Component.BuildPlan
-
-// Configure the component from input parameters.
-Component: #Kubernetes & {
-	// Configure all resources in the desired namespace
-	Resources: [_]: [_]: metadata: namespace: parameters.namespace
-
-	Resources: {
-		Deployment: httpbin: {
-			metadata: name:      "httpbin"
-			metadata: namespace: parameters.namespace
-			spec: {
-				replicas: parameters.replicaCount
-				selector: matchLabels: "app.kubernetes.io/name": "httpbin"
-				template: {
-					metadata: labels: selector.matchLabels
-					spec: {
-						containers: [{
-							name:  "httpbin"
-							image: parameters.image
-							ports: [{
-								name:          "http"
-								containerPort: 8080
-								protocol:      "TCP"
-							}]
-							livenessProbe: httpGet: {
-								path: "/status/200"
-								port: "http"
-							}
-							readinessProbe: livenessProbe
-							resources: {}
-						}]
-					}
-				}
-			}
-
-		}
-
-		Service: httpbin: {
-			metadata: name:      "httpbin"
-			metadata: namespace: parameters.namespace
-			spec: {
-				selector: Deployment.httpbin.spec.selector.matchLabels
-				ports: [{
-					port:        80
-					targetPort:  "http"
-					protocol:    "TCP"
-					name:        "http"
-					appProtocol: "http"
-				}]
-			}
-		}
-	}
+// holos show buildplans --format=json | pbcopy
+holos: {
+  "kind": "BuildPlan",
+  "apiVersion": "v1alpha5",
+  "metadata": {
+    "name": "slice",
+    "labels": {
+      "holos.run/component.name": "slice"
+    },
+    "annotations": {
+      "app.holos.run/description": "slice transformer"
+    }
+  },
+  "spec": {
+    "artifacts": [
+      {
+        "artifact": "slice/components/slice/slice.gen.yaml",
+        "generators": [
+          {
+            "kind": "Resources",
+            "output": "resources.gen.yaml",
+            "resources": {
+              "Deployment": {
+                "httpbin": {
+                  "apiVersion": "apps/v1",
+                  "kind": "Deployment",
+                  "metadata": {
+                    "name": "httpbin",
+                    "namespace": "httpbin-demo"
+                  },
+                  "spec": {
+                    "replicas": 1,
+                    "selector": {
+                      "matchLabels": {
+                        "app.kubernetes.io/name": "httpbin"
+                      }
+                    },
+                    "template": {
+                      "metadata": {
+                        "labels": {
+                          "app.kubernetes.io/name": "httpbin"
+                        }
+                      },
+                      "spec": {
+                        "containers": [
+                          {
+                            "image": "quay.io/holos/mccutchen/go-httpbin",
+                            "livenessProbe": {
+                              "httpGet": {
+                                "path": "/status/200",
+                                "port": "http"
+                              }
+                            },
+                            "name": "httpbin",
+                            "ports": [
+                              {
+                                "containerPort": 8080,
+                                "name": "http",
+                                "protocol": "TCP"
+                              }
+                            ],
+                            "readinessProbe": {
+                              "httpGet": {
+                                "path": "/status/200",
+                                "port": "http"
+                              }
+                            },
+                            "resources": {}
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "Service": {
+                "httpbin": {
+                  "apiVersion": "v1",
+                  "kind": "Service",
+                  "metadata": {
+                    "name": "httpbin",
+                    "namespace": "httpbin-demo"
+                  },
+                  "spec": {
+                    "ports": [
+                      {
+                        "appProtocol": "http",
+                        "name": "http",
+                        "port": 80,
+                        "protocol": "TCP",
+                        "targetPort": "http"
+                      }
+                    ],
+                    "selector": {
+                      "app.kubernetes.io/name": "httpbin"
+                    }
+                  }
+                }
+              }
+            },
+            "helm": {
+              "chart": {
+                "name": "",
+                "version": "",
+                "release": "",
+                "repository": {
+                  "name": "",
+                  "url": "",
+                  "auth": {
+                    "username": {},
+                    "password": {}
+                  }
+                }
+              },
+              "values": null
+            },
+            "file": {
+              "source": ""
+            }
+          }
+        ],
+        "transformers": [
+          {
+            "kind": "Kustomize",
+            "inputs": [
+              "resources.gen.yaml"
+            ],
+            "output": "slice/components/slice/slice.gen.yaml",
+            "kustomize": {
+              "kustomization": {
+                "apiVersion": "kustomize.config.k8s.io/v1beta1",
+                "kind": "Kustomization",
+                "resources": [
+                  "resources.gen.yaml"
+                ]
+              }
+            },
+            "join": {}
+          }
+        ]
+      }
+    ]
+  }
 }
