@@ -7,7 +7,7 @@ holos: {
     "artifacts": [
       {
         // TODO(jjm): model a directory artifact.
-        "artifact": "slice/components/slice",
+        "artifact": "slice/components/slice/",
         "transformers": [
           {
             "kind": "Kustomize",
@@ -25,12 +25,13 @@ holos: {
               }
             }
           },
-          // TODO(jjm): make this work - https://discord.com/channels/1299051862418395216/1344665754657751090
+          // TODO(jjm): slice spike - https://discord.com/channels/1299051862418395216/1344665754657751090
           {
             "kind": "Slice",
             "inputs": ["slice.gen.yaml"],
-            "output": "slice/components/slice",
-            // TODO(jjm): have a think about fields needed for arbitrary commands for this same use case.
+            // TODO(jjm): slice output must end in / for expedience, represents
+            // all files matching a prefix until we define it properly.
+            "output": "slice/components/slice/",
           }
         ]
       }
