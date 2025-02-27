@@ -1,0 +1,3 @@
+#! /bin/bash
+#
+exec dlv exec --headless --listen=:2345 --api-version=2 --accept-multiclient ~/Holos/holos/bin/holos-debug -- '--log-level' 'debug' '--log-format' 'console' 'render' 'component' '--inject' 'outputBaseDir=slice' '--inject' 'holos_component_name=slice' '--inject' 'holos_component_path=components/slice' '--inject' 'holos_component_labels={"holos.run/component.name":"slice"}' '--inject' 'holos_component_annotations={"app.holos.run/description":"slice transformer"}' './components/slice'
