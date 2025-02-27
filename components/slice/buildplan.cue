@@ -19,7 +19,6 @@ holos: {
   "spec": {
     "artifacts": [
       {
-        "artifact": "slice/components/slice/slice.gen.yaml",
         "generators": [
           {
             "kind": "Resources",
