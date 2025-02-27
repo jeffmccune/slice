@@ -7,4 +7,4 @@ Platform: author.#Platform & {
 }
 
 // Render a Platform resource for holos to process
-holos: Platform.Resource
+// holos: Platform.Resource
